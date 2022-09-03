@@ -1,0 +1,178 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+# Carga de datos y limpieza de los mismos
+```{r}
+library(reshape2)
+library(qgraph)
+library( ggplot2 ) 
+library( qgraph ) 
+library( gplots ) 
+library( tidyverse ) 
+
+# Carga de datos 
+url_path <- "http://cardsorting.net/tutorials/25.csv"
+data <- read.csv(url(url_path))
+
+#Tratamiento de los datos
+#eliminamos las columnas Uniqid, Startdate, Starttime, Endtime, QID y Comment
+df <- subset(data, select = -c(Category, Uniqid, Startdate, Starttime, Endtime, QID, Comment))
+
+```
+
+```{r}
+#Histograma
+df %>% gather() 
+
+#create PNG for the heat map
+  png("histogramas.png",            
+  width = 5*300,        # 5 x 300 pixels
+  height = 5*300,
+  res = 300,            # 300 pixels per inch
+  pointsize = 8)        # smaller font size
+  
+ggplot(gather(df), aes(value)) + 
+    geom_histogram(alpha=0.5, color='black', fill='red', binwidth=1) +
+    scale_x_continuous(breaks = seq(0, 1, by=1)) +
+    scale_y_continuous(breaks = seq(0, 200, by=100)) +
+    labs(y = 'Frecuencias') +
+    facet_wrap(~key, scales = 'fixed')
+# close the PNG device
+dev.off() 
+```
+
+
+#MATRIZ DE DISTANCIAS :DISTANCIAS EUCLÍDEAS
+
+```{r}
+#codigo fuente: https://sebastianraschka.com/Articles/heatmaps_in_r.html
+
+#  Calculamos la distancia euclídea entre columnas 
+distances   <-  as.matrix(dist(t(df),  method = "euclidean")) 
+
+# creates a own color palette from red to green
+my_palette <- colorRampPalette(c("red", "yellow", "green"))
+
+# (optional) defines the color breaks manually for a "skewed" color transition
+col_breaks = c(seq(-1,0,length=100),  # for red
+  seq(0.01,0.8,length=100),           # for yellow
+  seq(0.81,1,length=100))             # for green
+
+#create PNG for the heat map
+  png("matriz_distancias_manhanttan.png",            
+  width = 5*300,        # 5 x 300 pixels
+  height = 5*300,
+  res = 300,            # 300 pixels per inch
+  pointsize = 8)        # smaller font size
+
+map <- heatmap.2(distances,
+  main = "Mapa de Calor De Distancias(Euclídea)",
+  notecol="black",
+  col = my_palette,
+  #dendrogram = "none",
+  #Rowv = TRUE,
+  #Colv = TRUE,
+  trace = "none",
+  #margins =c(12,9),
+  symkey = FALSE)
+
+map
+
+# close the PNG device
+dev.off()    
+```
+
+#MATRIZ DE DISTANCIAS :DISTANCIA MANHATTAN
+
+```{r}
+
+# Matriz de distancias manhattan entre columnas 
+distances_manh   <-  as.matrix(dist(t(df),  method = "manhattan")) 
+
+# creates a own color palette from red to green
+my_palette <- colorRampPalette(c("red", "yellow", "green"))
+
+# (optional) defines the color breaks manually for a "skewed" color transition
+col_breaks = c(seq(-1,0,length=100),  # for red
+  seq(0.01,0.8,length=100),           # for yellow
+  seq(0.81,1,length=100))             # for green
+
+#create PNG for the heat map
+  png("matriz_distancias_manhanttan.png",            
+  width = 5*300,        # 5 x 300 pixels
+  height = 5*300,
+  res = 300,            # 300 pixels per inch
+  pointsize = 8)        # smaller font size
+
+map <- heatmap.2(distances_manh,
+  main = "Mapa de Calor De Distancias(Manhattan)",
+  notecol="black",
+  col = my_palette,
+  #dendrogram = "none",
+  #Rowv = TRUE,
+  #Colv = TRUE,
+  trace = "none",
+  #margins =c(12,9),
+  symkey = FALSE)
+
+map
+
+# close the PNG device
+dev.off()   
+```
+
+
+# GRAFO: CAMBIAR AL PESO SOBRE LAS ARISTAS
+```{r}
+#create PNG for the heat map
+  png("grafo-euclideo.png",            
+  width = 5*300,        # 5 x 300 pixels
+  height = 5*300,
+  res = 300,            # 300 pixels per inch
+  pointsize = 8)        # smaller font size
+
+gr <- list(1:2, 2:4, 4:6, 6:8, 8:10)
+
+grafo <- qgraph( cor(1 / (1 + distances)),  #compute the variance
+  labels = colnames(distances), 
+  layout = "spring", 
+  vsize = 5,
+  vTrans = 150,
+  group = gr,
+  colors = c("brown", "red", "orange", "yellow", "green")
+  )
+
+grafo
+
+# close the PNG device
+dev.off()   
+```
+
+```{r}
+#create PNG for the heat map
+  png("grafo-manh.png",            
+  width = 5*300,        # 5 x 300 pixels
+  height = 5*300,
+  res = 300,            # 300 pixels per inch
+  pointsize = 8)        # smaller font size
+
+gr <- list(1:2, 2:4, 4:6, 6:8, 8:10)
+
+grafo <- qgraph( cor(1 / (1 + distances_manh)),  #compute the variance
+  labels = colnames(distances), 
+  layout = "spring", 
+  vsize = 5,
+  vTrans = 150,
+  group = gr,
+  colors = c("brown", "red", "orange", "yellow", "green")
+  )
+
+grafo
+
+# close the PNG device
+dev.off()   
+```
+
